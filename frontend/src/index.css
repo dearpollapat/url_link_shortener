@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+/* Tailwind v4's dark: variant follows prefers-color-scheme by default. */
+html {
+  color-scheme: light dark;
+}

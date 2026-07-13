@@ -1,0 +1,16 @@
+# --- .NET ---
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+.vs/
+
+# --- Node / frontend ---
+node_modules/
+dist/
+*.local
+
+# --- Editor / OS ---
+.idea/
+.DS_Store
+Thumbs.db
