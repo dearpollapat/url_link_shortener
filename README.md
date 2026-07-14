@@ -1,59 +1,58 @@
 # 🔗 Shortly — URL Link Shortener
 
-A small but complete URL shortener: turn long URLs into short links, track
-clicks, resolve to platform-specific destinations, and manage links. Built with
-an **ASP.NET Core (.NET 9)** backend and a **React + TypeScript (Vite)** frontend.
+บริการย่อลิงก์ขนาดเล็กแต่ครบถ้วน: เปลี่ยน URL ยาว ๆ ให้เป็นลิงก์สั้น นับจำนวนคลิก
+รองรับปลายทางตามแพลตฟอร์ม และจัดการลิงก์ได้ พัฒนาด้วย backend **ASP.NET Core (.NET 9)**
+และ frontend **React + TypeScript (Vite)**
 
 ---
 
-## Table of contents
-- [Features](#features)
-- [Architecture](#architecture)
-- [Getting started](#getting-started)
+## สารบัญ
+- [ความสามารถ (Features)](#ความสามารถ-features)
+- [สถาปัตยกรรม (Architecture)](#สถาปัตยกรรม-architecture)
+- [เริ่มต้นใช้งาน (Getting started)](#เริ่มต้นใช้งาน-getting-started)
 - [API contract](#api-contract)
-- [Design decisions](#design-decisions)
-- [Testing](#testing)
-- [How I'd extend it](#how-id-extend-it)
+- [การตัดสินใจด้านการออกแบบ (Design decisions)](#การตัดสินใจด้านการออกแบบ-design-decisions)
+- [การทดสอบ (Testing)](#การทดสอบ-testing)
+- [แนวทางต่อยอด (How I'd extend it)](#แนวทางต่อยอด-how-id-extend-it)
 
 ---
 
-## Features
+## ความสามารถ (Features)
 
-| # | Capability | Notes |
+| # | ความสามารถ | รายละเอียด |
 |---|------------|-------|
-| 1 | Create short link | Auto-generated code or custom alias; URL validated |
-| 2 | View access stats | Click count, created time, last accessed time |
-| 3 | Disable / delete | Disabled links stop redirecting but are kept; delete removes them |
-| 4 | Platform-specific destinations | iOS / Android / default, decided at redirect time from the User-Agent |
-| 5 | Pluggable short-code generation | Strategy pattern — add new generators without touching existing code |
+| 1 | สร้างลิงก์สั้น | auto-generate code หรือ custom alias; validate URL |
+| 2 | ดูสถิติการเข้าถึง | จำนวนคลิก, เวลาที่สร้าง, เวลาเข้าถึงล่าสุด |
+| 3 | Disable / delete | disabled = หยุด redirect แต่เก็บ record ไว้; delete = ลบทิ้ง |
+| 4 | ปลายทางตามแพลตฟอร์ม | iOS / Android / default ตัดสินใจตอน redirect จาก User-Agent |
+| 5 | Pluggable short-code generation | Strategy pattern — เพิ่มวิธี gen ใหม่ได้โดยไม่แก้โค้ดเดิม |
 
-Bonus: responsive mobile-first UI (Tailwind CSS, light/dark), copy-to-clipboard,
-QR codes (`qrcode.react`), helpful validation errors, thread-safe in-memory store
-with a swappable data layer.
+**Bonus:** UI responsive แบบ mobile-first (Tailwind CSS, light/dark), copy-to-clipboard,
+QR code (`qrcode.react`), error message ที่เป็นประโยชน์, in-memory store ที่ thread-safe
+และสลับเป็น database จริงได้
 
 ---
 
-## Architecture
+## สถาปัตยกรรม (Architecture)
 
-A **vertical-slice** layout inside a single API project — deliberately chosen
-over a 4-project Clean Architecture split because the scope is small and the
-assignment explicitly values *sound judgment over over-engineering*. The design
-patterns that matter (Strategy, Repository, Validator) still live behind
-interfaces; they just aren't spread across separate assemblies.
+ใช้โครงแบบ **vertical-slice** ภายใน API project เดียว — เลือกแทนการแยกเป็น Clean Architecture
+4 project เพราะ scope เล็ก และโจทย์เน้น *sound judgment มากกว่า over-engineering*
+design pattern ที่สำคัญ (Strategy, Repository, Validator) ยังอยู่หลัง interface
+เพียงแต่ไม่ได้กระจายไปคนละ assembly
 
 ```
 backend/
   src/UrlShortener.Api/
-    Core/                        # domain + abstractions (no web concerns)
+    Core/                        # domain + abstractions (ไม่มี web concern)
       Link.cs                    # entity: destinations, status, atomic click count
-      Platform.cs, LinkStatus.cs # enums (state modeled as enums, not bools)
-      Result.cs                  # Result<T> / Error — business failures without exceptions
+      Platform.cs, LinkStatus.cs # enums (state เป็น enum ไม่ใช่ bool)
+      Result.cs                  # Result<T> / Error — business failure โดยไม่ throw
       ShortCodes/                # pluggable code generation (Strategy + resolver)
         IShortCodeGenerator.cs
         RandomShortCodeGenerator.cs
         CustomAliasGenerator.cs
         ShortCodeGeneratorResolver.cs
-        AliasRules.cs            # alias format + reserved-name rules
+        AliasRules.cs            # กฎ format alias + reserved-name
       Persistence/               # Repository abstraction + in-memory impl
         ILinkRepository.cs
         InMemoryLinkRepository.cs
@@ -63,7 +62,7 @@ backend/
       Validation/                # URL validation
         IUrlValidator.cs
         UrlValidator.cs
-    Features/                    # one folder per feature slice
+    Features/                    # หนึ่ง folder ต่อหนึ่ง feature slice
       Links/                     # create, list, stats, disable/enable, delete
         LinkService.cs           # application logic
         LinksEndpoints.cs        # minimal-API endpoints
@@ -72,36 +71,34 @@ backend/
       Redirect/
         RedirectEndpoints.cs     # GET /{shortCode} -> 302
     Common/
-      ResultExtensions.cs        # maps Error -> RFC 7807 ProblemDetails
+      ResultExtensions.cs        # map Error -> RFC 7807 ProblemDetails
     Program.cs                   # DI wiring
   tests/UrlShortener.UnitTests/  # xUnit + FluentAssertions + NSubstitute (87)
 
 frontend/                        # Vite + React + TypeScript SPA (Tailwind CSS v4)
   src/
-    api.ts                       # typed fetch client (throws ApiError from ProblemDetails)
+    api.ts                       # typed fetch client (throw ApiError จาก ProblemDetails)
     hooks/useLinks.ts            # TanStack Query: list query + create/status/delete mutations
-    App.tsx                      # 3 sections: create form, links table, per-link actions
+    App.tsx                      # 3 ส่วน: create form, links table, per-link actions
     components/CreateLinkForm.tsx, LinkCard.tsx, Logo.tsx
 ```
 
 ### Frontend server state — TanStack Query
-The links list is **server state**, not UI state: it's fetched, mutated
-(create / disable / delete), and — crucially — the click counts change on the
-server whenever someone follows a link. TanStack Query fits that shape directly:
-one `useLinks` query owns `isLoading` / `isError` / refetch; each mutation
-exposes `isPending` / `error` for inline loading and error handling and
-`invalidateQueries(['links'])` re-syncs the list after every change. A short
-`staleTime` + refetch-on-focus keeps stats fresh when the user returns from
-clicking a link — behavior I'd otherwise hand-roll in a custom hook. For four
-endpoints it's a small dependency, but it removes exactly the loading/error/
-refetch boilerplate this UI is mostly made of; a bespoke `useReducer` hook would
-be the leaner alternative if avoiding the dependency mattered.
+links list คือ **server state** ไม่ใช่ UI state: ถูก fetch, mutate (create / disable / delete)
+และที่สำคัญคือ click count เปลี่ยนฝั่ง server ทุกครั้งที่มีคนกดลิงก์ TanStack Query เหมาะกับ
+รูปแบบนี้ตรง ๆ: query `useLinks` ตัวเดียวคุม `isLoading` / `isError` / refetch; แต่ละ mutation
+มี `isPending` / `error` สำหรับ loading และ error แบบ inline และ `invalidateQueries(['links'])`
+sync list ใหม่หลังทุกการเปลี่ยนแปลง ตั้ง `staleTime` สั้น + refetch-on-focus ทำให้สถิติสดใหม่
+เมื่อผู้ใช้กลับมาที่ tab หลังกดลิงก์ — ซึ่งถ้าทำ custom hook เองต้องเขียน logic นี้เพิ่ม
+สำหรับ 4 endpoints ถือเป็น dependency ที่เล็ก แต่ตัด boilerplate เรื่อง loading/error/refetch
+ที่เป็นเนื้อหาหลักของ UI นี้ออกไปได้; ถ้าต้องการเลี่ยง dependency ก็เขียน `useReducer` hook
+เองแทนได้
 
 ---
 
-## Getting started
+## เริ่มต้นใช้งาน (Getting started)
 
-**Prerequisites:** .NET 9 SDK, Node.js 20+ (Tailwind CSS v4).
+**สิ่งที่ต้องมี:** .NET 9 SDK, Node.js 20+ (Tailwind CSS v4)
 
 ### 1. Backend (terminal A)
 
@@ -110,7 +107,7 @@ cd backend
 dotnet run --project src/UrlShortener.Api --urls "http://localhost:5000"
 ```
 
-API is now at `http://localhost:5000`. OpenAPI doc: `http://localhost:5000/openapi/v1.json`.
+API รันที่ `http://localhost:5000` · OpenAPI doc: `http://localhost:5000/openapi/v1.json`
 
 ### 2. Frontend (terminal B)
 
@@ -120,31 +117,29 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:5173`. The dev server talks to the API on `:5000`
-(configurable via `VITE_API_BASE`).
+เปิด `http://localhost:5173` · dev server คุยกับ API ที่ `:5000` (ปรับได้ผ่าน `VITE_API_BASE`)
 
 ### Custom short domain (optional)
 
-The base URL shown in short links is configurable — no real domain needed. Set
-`ShortUrl:BaseUrl` in `backend/src/UrlShortener.Api/appsettings.json` (e.g.
-`"https://gul.fy"`) and, if you want it to resolve locally, map `gul.fy` to
-`127.0.0.1` in your hosts file and run Kestrel on that host. By default it uses
-`http://localhost:5000` and treats the domain as a display value.
+base URL ที่แสดงในลิงก์สั้นปรับค่าได้ — ไม่ต้องมีโดเมนจริง ตั้ง `ShortUrl:BaseUrl`
+ใน `backend/src/UrlShortener.Api/appsettings.json` (เช่น `"https://gul.fy"`) และถ้าอยากให้
+resolve บนเครื่อง local ให้ชี้ `gul.fy` ไปที่ `127.0.0.1` ในไฟล์ hosts แล้วรัน Kestrel บน host นั้น
+ค่า default ใช้ `http://localhost:5000` และมองโดเมนเป็นแค่ค่าที่ใช้แสดงผล
 
 ---
 
 ## API contract
 
-Base URL: `http://localhost:5000`. All bodies are JSON. Errors use
-[RFC 7807 ProblemDetails](https://datatracker.ietf.org/doc/html/rfc7807).
+Base URL: `http://localhost:5000` · body เป็น JSON ทั้งหมด · error ใช้
+[RFC 7807 ProblemDetails](https://datatracker.ietf.org/doc/html/rfc7807)
 
-### Create a link — `POST /api/links`
+### สร้างลิงก์ — `POST /api/links`
 
 ```jsonc
 // request
 {
   "url": "https://www.google.co.th",   // required, absolute http/https
-  "customAlias": "mylink",              // optional; auto-generated if omitted
+  "customAlias": "mylink",              // optional; auto-generate ถ้าไม่ส่ง
   "destinations": {                      // optional platform overrides
     "android": "https://download.gulf.co.th/android.apk",
     "ios": "https://download.gulf.co.th/iphone.ipa"
@@ -165,148 +160,142 @@ Base URL: `http://localhost:5000`. All bodies are JSON. Errors use
 }
 ```
 
-| Status | When |
+| Status | เมื่อไหร่ |
 |--------|------|
-| `201 Created` | success |
-| `400 Bad Request` | invalid URL, malformed alias, unknown platform key |
-| `409 Conflict` | custom alias already taken |
+| `201 Created` | สำเร็จ |
+| `400 Bad Request` | URL ไม่ถูกต้อง, alias ผิด format, platform key ไม่รู้จัก |
+| `409 Conflict` | custom alias ถูกใช้ไปแล้ว |
 
-### List links — `GET /api/links`
-`200 OK` → array of link objects, newest first.
+### List ลิงก์ — `GET /api/links`
+`200 OK` → array ของ link objects เรียงใหม่สุดก่อน
 
-### Get stats — `GET /api/links/{shortCode}`
-`200 OK` → single link object · `404 Not Found` if missing.
+### ดูสถิติ — `GET /api/links/{shortCode}`
+`200 OK` → link object เดียว · `404 Not Found` ถ้าไม่มี
 
 ### Enable / disable — `PATCH /api/links/{shortCode}`
 ```json
-{ "status": "Disabled" }   // or "Active"
+{ "status": "Disabled" }   // หรือ "Active"
 ```
-`200 OK` → updated link · `404 Not Found`. `PATCH` is used because it is a
-partial update of one field, and the same endpoint re-enables a link.
+`200 OK` → link ที่ update แล้ว · `404 Not Found` — ใช้ `PATCH` เพราะเป็น partial update
+ของ field เดียว และใช้ endpoint เดียวกันในการ re-enable
 
 ### Delete — `DELETE /api/links/{shortCode}`
-`204 No Content` · `404 Not Found`.
+`204 No Content` · `404 Not Found`
 
 ### Redirect — `GET /{shortCode}`
-Detects the platform from the `User-Agent`, redirects to the matching
-destination, and increments the click count.
+detect platform จาก `User-Agent`, redirect ไปปลายทางที่ตรงกัน แล้วเพิ่ม click count
 
-| Status | When |
+| Status | เมื่อไหร่ |
 |--------|------|
-| `302 Found` | active link — `Location` header holds the destination |
-| `404 Not Found` | missing, disabled, or deleted link (no redirect) |
+| `302 Found` | ลิงก์ active — header `Location` คือปลายทาง |
+| `404 Not Found` | ไม่มี / disabled / ถูกลบ (ไม่ redirect) |
 
 ---
 
-## Design decisions
+## การตัดสินใจด้านการออกแบบ (Design decisions)
 
 ### Pluggable short-code generation (Strategy + resolver)
-`IShortCodeGenerator` has two implementations — `RandomShortCodeGenerator` and
-`CustomAliasGenerator`. A `ShortCodeGeneratorResolver` picks the first one whose
-`CanHandle` returns true (registration order = priority; the catch-all random
-generator is last). **Adding a third strategy is a new class + one DI line — no
-existing code changes** (Open/Closed).
+`IShortCodeGenerator` มี 2 implementation — `RandomShortCodeGenerator` และ
+`CustomAliasGenerator` โดย `ShortCodeGeneratorResolver` เลือกตัวแรกที่ `CanHandle`
+คืน true (ลำดับการ register = ลำดับความสำคัญ; random generator ที่รับทุกงานอยู่ท้ายสุด)
+**เพิ่ม strategy ที่ 3 = เขียน class ใหม่ + register 1 บรรทัด ไม่ต้องแก้โค้ดเดิม** (Open/Closed)
 
-### Why random codes, not Base62 of an auto-increment ID
-Sequential-ID codes are enumerable (`/5` → try `/4`, `/6`), leak how many links
-exist, and need a central counter to coordinate across instances. A
-crypto-random 7-char code (`RandomNumberGenerator`, ~56⁷ space) is
-unpredictable and needs no coordination. The trade-off — no built-in uniqueness
-guarantee — is handled by collision retry.
+### ทำไมใช้ random code ไม่ใช่ Base62 ของ auto-increment ID
+code ที่มาจาก sequential ID เดาได้ (`/5` → ลอง `/4`, `/6`), leak จำนวนลิงก์ในระบบ,
+และต้องมี central counter คอย coordinate ข้าม instance ส่วน crypto-random 7 ตัวอักษร
+(`RandomNumberGenerator`, พื้นที่ ~56⁷) เดาไม่ได้และไม่ต้อง coordinate — trade-off คือ
+ไม่มีการันตี unique ในตัว จึงจัดการด้วย collision retry
 
 ### Collision handling
-Uniqueness is enforced in one atomic place: `ILinkRepository.TryAddAsync`
-(`ConcurrentDictionary.TryAdd`). On collision:
-- **Random** generator → retry with a fresh code (up to 5 attempts).
-- **Custom alias** → deterministic, so a collision is a real `409 Conflict`, no retry.
+uniqueness ถูก enforce ที่จุดเดียวแบบ atomic: `ILinkRepository.TryAddAsync`
+(`ConcurrentDictionary.TryAdd`) เมื่อชน:
+- **Random** generator → retry ด้วย code ใหม่ (สูงสุด 5 ครั้ง)
+- **Custom alias** → deterministic ดังนั้นการชนคือ `409 Conflict` จริง ไม่ retry
 
-The policy is expressed by `IShortCodeGenerator.AllowRetryOnCollision`, so the
-service never type-checks concrete generators.
+policy นี้แสดงผ่าน `IShortCodeGenerator.AllowRetryOnCollision` ทำให้ service
+ไม่ต้อง type-check concrete generator เลย
 
-### 302, not 301, for redirects
-`301` is permanent and gets cached by browsers/proxies — which would **break
-click counting** (later visits never reach the server) and platform routing. A
-`302` is re-evaluated every visit, so every click is counted, the platform is
-re-detected, and disabling a link takes effect immediately.
+### 302 ไม่ใช่ 301 สำหรับ redirect
+`301` เป็น permanent และถูก cache โดย browser/proxy — ซึ่งจะ **ทำให้ click counting พัง**
+(การเข้าครั้งถัด ๆ ไปไม่วิ่งถึง server) และ platform routing ก็พังด้วย ส่วน `302`
+ถูกประเมินใหม่ทุกครั้ง ดังนั้นทุกคลิกถูกนับ, platform ถูก detect ใหม่, และการ disable
+มีผลทันที
 
-### Platform detection is its own seam
-`IPlatformDetector` parses the User-Agent independently of link logic, so it's
-unit-testable and swappable for a richer device-detection library. Unknown or
-missing agents (bots, curl) fall back to `Default` so a link always resolves.
+### Platform detection เป็น seam แยกของตัวเอง
+`IPlatformDetector` parse User-Agent แยกจาก link logic จึง unit-test ได้และสลับไปใช้
+library device-detection ที่ละเอียดกว่าได้ กรณี agent ไม่รู้จัก/ไม่มี (bot, curl)
+จะ fallback เป็น `Default` เสมอเพื่อให้ลิงก์ resolve ได้ตลอด
 
-### State as an enum, atomic click counting
-`LinkStatus` is an enum (not an `IsDisabled` bool) so the redirect makes one
-check and new states (e.g. `Expired`) can be added later. Click counting uses
-`Interlocked.Increment`, verified by a 10k-parallel-visit test.
+### State เป็น enum, click counting แบบ atomic
+`LinkStatus` เป็น enum (ไม่ใช่ bool `IsDisabled`) ทำให้ redirect เช็คจุดเดียว
+และเพิ่ม state ใหม่ (เช่น `Expired`) ได้ภายหลัง การนับคลิกใช้ `Interlocked.Increment`
+ยืนยันด้วย test 10k-parallel-visit
 
-### Swappable storage
-Everything goes through `ILinkRepository`. The in-memory implementation uses a
-case-insensitive `ConcurrentDictionary`; swapping in EF Core means one new class
-and one DI registration — the service layer is untouched.
+### Storage สลับได้
+ทุกอย่างผ่าน `ILinkRepository` implementation แบบ in-memory ใช้ case-insensitive
+`ConcurrentDictionary`; สลับไป EF Core = class ใหม่ 1 ตัว + register DI 1 บรรทัด —
+service layer ไม่ต้องแตะ
 
-### Business errors as `Result`, not exceptions
-The service returns `Result<T>` / `Result` carrying a typed `Error`
-(`Validation` / `Conflict` / `NotFound`) instead of throwing for expected
-failures. Callers must handle both outcomes explicitly, the happy path stays
-free of exception control flow, and the endpoint maps `Error` → RFC 7807
-ProblemDetails (`ToProblem`). Exceptions are reserved for genuinely unexpected
-faults, which fall through to a default 500 ProblemDetails.
+### Business error เป็น `Result` ไม่ใช่ exception
+service คืน `Result<T>` / `Result` ที่ถือ `Error` แบบ typed (`Validation` / `Conflict` /
+`NotFound`) แทนการ throw สำหรับ failure ที่คาดไว้ — caller ต้อง handle ทั้งสองทางชัดเจน,
+happy path ไม่มี exception control flow, และ endpoint map `Error` → RFC 7807 ProblemDetails
+(`ToProblem`) ส่วน exception เก็บไว้สำหรับ fault ที่ไม่คาดคิดจริง ๆ ซึ่งจะตกไปที่ default
+500 ProblemDetails
 
 ### Validation & edge cases
-`UrlValidator` accepts only absolute `http`/`https` URLs — rejecting missing
-schemes, `javascript:`, `ftp:`, `file:`, and relative paths. The service adds
-two more guards: a destination may not point back at the shortener's own domain
-(redirect loop), and a custom alias may not be malformed or a **reserved name**
-(`api`, `openapi`, `health`, …) that would shadow a real route.
+`UrlValidator` รับเฉพาะ absolute `http`/`https` URL — ปฏิเสธ missing scheme, `javascript:`,
+`ftp:`, `file:`, และ relative path ส่วน service เพิ่มอีก 2 ด่าน: ปลายทางห้ามชี้กลับมาที่
+โดเมนของ shortener เอง (redirect loop), และ custom alias ห้ามผิด format หรือเป็น
+**reserved name** (`api`, `openapi`, `health`, …) ที่จะบัง route จริง
 
 ---
 
-## Testing
+## การทดสอบ (Testing)
 
 ```bash
 cd backend
 dotnet test
 ```
 
-**87 unit tests** (xUnit + FluentAssertions + NSubstitute) cover the core logic
-the assignment calls out:
+**87 unit tests** (xUnit + FluentAssertions + NSubstitute) ครอบคลุม core logic
+ตามที่โจทย์ระบุ:
 - **short-code generation** — length, alphabet, fallback, retry policy, resolver selection
-- **URL validation** — accepts http/https, rejects `javascript:`, `ftp:`, `file:`, relative, empty
-- custom alias validation, reserved-name and self-loop rejection, case-insensitive uniqueness
-- **click counting** — including 10k concurrent visits (atomicity) and last-accessed tracking
-- **disable / delete** — re-enable, and that disabled/deleted links neither count nor redirect
-- platform detection and platform-aware destination resolution
+- **URL validation** — รับ http/https, ปฏิเสธ `javascript:`, `ftp:`, `file:`, relative, empty
+- custom alias validation, ปฏิเสธ reserved-name และ self-loop, uniqueness แบบ case-insensitive
+- **click counting** — รวม 10k concurrent visits (atomicity) และ last-accessed tracking
+- **disable / delete** — re-enable, และลิงก์ที่ disabled/deleted ไม่นับคลิกและไม่ redirect
+- platform detection และการเลือกปลายทางตามแพลตฟอร์ม
 
-### Tests that prove the design is decoupled
-`LinkServiceDecouplingTests` swaps each collaborator for a mock to show the
-service depends only on abstractions and its behavior flows through those seams:
+### Test ที่พิสูจน์ว่า design decoupled จริง
+`LinkServiceDecouplingTests` สลับ collaborator แต่ละตัวเป็น mock เพื่อแสดงว่า service
+พึ่งแค่ abstraction และ behavior ไหลผ่าน seam เหล่านั้น:
 
-| Test | What it proves |
+| Test | พิสูจน์อะไร |
 |------|----------------|
-| `Create_uses_the_code_produced_by_the_injected_generator` | Code generation is fully delegated to `IShortCodeGenerator` — a brand-new strategy works untouched (Strategy / Open-Closed) |
-| `Create_retries_…_when_the_repository_reports_a_collision` | Uniqueness is owned by `ILinkRepository`; the retry loop runs against the abstraction, not in-memory internals |
-| `Create_does_not_retry_a_deterministic_generator_…` | `AllowRetryOnCollision` drives the decision — no concrete-type check |
-| `Redirect_writes_the_click_back_through_the_repository` | Click-count persistence is a seam (`UpdateAsync`), swappable for a DB |
-| `Create_rejects_when_the_url_validator_rejects` | URL validation is delegated to `IUrlValidator`, and storage is never touched on failure |
-| `Resolve_selects_a_newly_added_strategy_…` | The resolver picks a newly registered generator purely via `CanHandle` |
+| `Create_uses_the_code_produced_by_the_injected_generator` | code generation delegate ให้ `IShortCodeGenerator` เต็มที่ — strategy ใหม่ทำงานได้โดยไม่แก้อะไร (Strategy / Open-Closed) |
+| `Create_retries_…_when_the_repository_reports_a_collision` | uniqueness เป็นของ `ILinkRepository`; retry loop วิ่งผ่าน abstraction ไม่ใช่ internals ของ in-memory |
+| `Create_does_not_retry_a_deterministic_generator_…` | `AllowRetryOnCollision` เป็นตัวขับการตัดสินใจ — ไม่มี concrete-type check |
+| `Redirect_writes_the_click_back_through_the_repository` | click-count persistence เป็น seam (`UpdateAsync`) สลับเป็น DB ได้ |
+| `Create_rejects_when_the_url_validator_rejects` | URL validation delegate ให้ `IUrlValidator` และไม่แตะ storage เมื่อ fail |
+| `Resolve_selects_a_newly_added_strategy_…` | resolver เลือก generator ที่เพิ่งเพิ่มผ่าน `CanHandle` ล้วน ๆ |
 
 ---
 
-## How I'd extend it
+## แนวทางต่อยอด (How I'd extend it)
 
-- **Real database** — implement `ILinkRepository` with EF Core; add a unique
-  index on the short code to replace the in-memory atomic check.
-- **Scale click counting** — move increments off the redirect hot path to an
-  async queue / event stream and aggregate (eventual consistency).
-- **Richer analytics** — record per-visit events (referrer, geo, timestamp)
-  instead of a single counter.
-- **More generators** — word-pair codes, hash-based, vanity domains — each a new
-  `IShortCodeGenerator`.
-- **Link expiry & auth** — add an `Expired` status and per-user ownership.
+- **Database จริง** — implement `ILinkRepository` ด้วย EF Core; เพิ่ม unique index
+  บน short code แทน atomic check ของ in-memory
+- **Scale click counting** — ย้าย increment ออกจาก redirect hot path ไปเป็น
+  async queue / event stream แล้ว aggregate (eventual consistency)
+- **Analytics ละเอียดขึ้น** — เก็บ event ต่อ visit (referrer, geo, timestamp)
+  แทน counter ตัวเดียว
+- **Generator เพิ่ม** — word-pair codes, hash-based, vanity domains — แต่ละอันเป็น
+  `IShortCodeGenerator` ใหม่
+- **Link expiry & auth** — เพิ่ม status `Expired` และ ownership ต่อ user
 
 ---
 
-## AI usage
+## การใช้ AI
 
-This project was built with an agentic AI assistant. See [`ai-logs/`](./ai-logs)
-for the session log.
+โปรเจกต์นี้พัฒนาด้วย agentic AI assistant ดู session log ได้ที่ [`ai-logs/`](./ai-logs)
