@@ -4,6 +4,7 @@
 *.user
 *.suo
 .vs/
+.claude/
 
 # --- Node / frontend ---
 node_modules/

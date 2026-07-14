@@ -4,8 +4,8 @@ import { useCreateLink } from '../hooks/useLinks';
 
 const inputClass =
   'w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2.5 text-base ' +
-  'text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 ' +
-  'focus:ring-indigo-500/30 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100';
+  'text-slate-900 outline-none transition focus:border-brand-green focus:ring-2 ' +
+  'focus:ring-brand-green/30 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100';
 
 const labelClass = 'flex flex-col gap-1.5 text-sm font-medium';
 
@@ -80,7 +80,7 @@ export function CreateLinkForm() {
       <button
         type="button"
         onClick={() => setShowPlatforms((v) => !v)}
-        className="self-start text-sm font-medium text-indigo-600 hover:underline dark:text-indigo-400"
+        className="self-start text-sm font-medium text-brand-green hover:underline"
       >
         {showPlatforms ? '− Hide' : '+ Add'} platform-specific destinations
       </button>
@@ -119,7 +119,7 @@ export function CreateLinkForm() {
       <button
         type="submit"
         disabled={createLink.isPending}
-        className="rounded-lg bg-indigo-600 px-4 py-3 font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+        className="rounded-lg bg-brand-green px-4 py-3 font-semibold text-white transition hover:bg-brand-green-dark disabled:cursor-not-allowed disabled:opacity-60"
       >
         {createLink.isPending ? 'Shortening…' : 'Shorten'}
       </button>

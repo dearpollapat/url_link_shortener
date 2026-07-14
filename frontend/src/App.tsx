@@ -1,6 +1,7 @@
 import { useLinks } from './hooks/useLinks';
 import { CreateLinkForm } from './components/CreateLinkForm';
 import { LinkCard } from './components/LinkCard';
+import { Logo } from './components/Logo';
 
 export default function App() {
   const { data: links, isLoading, isError } = useLinks();
@@ -8,7 +9,12 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <header className="px-4 pt-10 pb-6 text-center sm:pt-14">
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">🔗 Shortly</h1>
+        <div className="flex items-center justify-center gap-3">
+          <Logo className="h-10 w-auto sm:h-12" />
+          <h1 className="text-3xl font-bold tracking-tight text-brand-navy dark:text-slate-100 sm:text-4xl">
+            Shortly
+          </h1>
+        </div>
         <p className="mt-2 text-slate-500 dark:text-slate-400">
           Turn long URLs into short, trackable links.
         </p>
@@ -21,7 +27,7 @@ export default function App() {
           <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
             Your links
             {links && links.length > 0 && (
-              <span className="rounded-full bg-indigo-600 px-2 py-0.5 text-xs font-semibold text-white">
+              <span className="rounded-full bg-brand-navy px-2 py-0.5 text-xs font-semibold text-white">
                 {links.length}
               </span>
             )}

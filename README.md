@@ -47,12 +47,13 @@ backend/
     Core/                        # domain + abstractions (no web concerns)
       Link.cs                    # entity: destinations, status, atomic click count
       Platform.cs, LinkStatus.cs # enums (state modeled as enums, not bools)
-      DomainExceptions.cs        # typed errors mapped to HTTP status codes
+      Result.cs                  # Result<T> / Error — business failures without exceptions
       ShortCodes/                # pluggable code generation (Strategy + resolver)
         IShortCodeGenerator.cs
         RandomShortCodeGenerator.cs
         CustomAliasGenerator.cs
         ShortCodeGeneratorResolver.cs
+        AliasRules.cs            # alias format + reserved-name rules
       Persistence/               # Repository abstraction + in-memory impl
         ILinkRepository.cs
         InMemoryLinkRepository.cs
@@ -71,16 +72,16 @@ backend/
       Redirect/
         RedirectEndpoints.cs     # GET /{shortCode} -> 302
     Common/
-      DomainExceptionHandler.cs  # maps DomainException -> RFC 7807 ProblemDetails
+      ResultExtensions.cs        # maps Error -> RFC 7807 ProblemDetails
     Program.cs                   # DI wiring
-  tests/UrlShortener.UnitTests/  # xUnit tests (63)
+  tests/UrlShortener.UnitTests/  # xUnit + FluentAssertions + NSubstitute (87)
 
 frontend/                        # Vite + React + TypeScript SPA (Tailwind CSS v4)
   src/
     api.ts                       # typed fetch client (throws ApiError from ProblemDetails)
     hooks/useLinks.ts            # TanStack Query: list query + create/status/delete mutations
     App.tsx                      # 3 sections: create form, links table, per-link actions
-    components/CreateLinkForm.tsx, LinkCard.tsx
+    components/CreateLinkForm.tsx, LinkCard.tsx, Logo.tsx
 ```
 
 ### Frontend server state — TanStack Query
@@ -100,7 +101,7 @@ be the leaner alternative if avoiding the dependency mattered.
 
 ## Getting started
 
-**Prerequisites:** .NET 9 SDK, Node.js 18+.
+**Prerequisites:** .NET 9 SDK, Node.js 20+ (Tailwind CSS v4).
 
 ### 1. Backend (terminal A)
 

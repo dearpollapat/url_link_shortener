@@ -15,7 +15,7 @@ const PLATFORM_LABELS: Record<string, string> = {
 
 const actionBtn =
   'rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium ' +
-  'transition hover:border-indigo-500 disabled:cursor-not-allowed disabled:opacity-60 ' +
+  'transition hover:border-brand-green disabled:cursor-not-allowed disabled:opacity-60 ' +
   'dark:border-slate-700 dark:bg-slate-800';
 
 export function LinkCard({ link }: Props) {
@@ -65,14 +65,14 @@ export function LinkCard({ link }: Props) {
               href={link.shortUrl}
               target="_blank"
               rel="noreferrer"
-              className="break-all text-base font-semibold text-indigo-600 hover:underline dark:text-indigo-400"
+              className="break-all text-base font-semibold text-brand-navy hover:underline dark:text-brand-navy-light"
             >
               {link.shortUrl.replace(/^https?:\/\//, '')}
             </a>
             <span
               className={`rounded-full px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide ${
                 isActive
-                  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400'
+                  ? 'bg-brand-green/15 text-brand-green'
                   : 'bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
               }`}
             >

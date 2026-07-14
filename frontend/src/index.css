@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/* Brand palette (from the leaf logo): green + dark blue. */
+@theme {
+  --color-brand-green: #4ea866;
+  --color-brand-green-dark: #3f8f54;
+  --color-brand-navy: #0a4a6e;
+  --color-brand-navy-dark: #073650;
+  --color-brand-navy-light: #2b7fb0;
+}
+
 /* Tailwind v4's dark: variant follows prefers-color-scheme by default. */
 html {
   color-scheme: light dark;

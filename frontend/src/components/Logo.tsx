@@ -1,0 +1,13 @@
+interface Props {
+  className?: string;
+}
+
+/** Two-leaf checkmark mark in the brand navy + green. */
+export function Logo({ className = 'h-10 w-auto' }: Props) {
+  return (
+    <svg viewBox="0 0 100 80" className={className} role="img" aria-label="Shortly logo">
+      <path d="M49 73 C40 56 27 44 12 34 C26 47 40 59 49 73 Z" fill="#0a4a6e" />
+      <path d="M49 73 C55 51 72 25 92 9 C83 39 68 57 49 73 Z" fill="#4ea866" />
+    </svg>
+  );
+}
